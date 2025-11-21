@@ -34,16 +34,16 @@ jobs:
 
       - name: Test
         run: |
-          cd server
-          gradle :market-place-common:test --no-daemon
+          cd server/market-place-common
+          gradle test --no-daemon
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to GitHub Packages
         run: |
-          cd server
-          gradle :market-place-common:publish --no-daemon
+          cd server/market-place-common
+          gradle publish --no-daemon
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

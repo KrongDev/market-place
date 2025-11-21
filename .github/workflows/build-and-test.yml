@@ -68,8 +68,8 @@ jobs:
 
       - name: Build ${{ matrix.service }}
         run: |
-          cd server
-          gradle :${{ matrix.service }}:build --no-daemon
+          cd server/${{ matrix.service }}
+          gradle build --no-daemon
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
