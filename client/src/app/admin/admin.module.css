@@ -1,0 +1,87 @@
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background: rgba(0, 0, 0, 0.5);
+    border-right: 1px solid var(--glass-border);
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.logo {
+    margin-bottom: var(--spacing-xl);
+    color: var(--primary-color);
+}
+
+.sidebar button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    text-align: left;
+    padding: var(--spacing-md);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.sidebar button:hover,
+.sidebar button.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.content {
+    flex: 1;
+    padding: var(--spacing-xl);
+}
+
+.header {
+    margin-bottom: var(--spacing-xl);
+    font-size: 2rem;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.table th,
+.table td {
+    padding: var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.table th {
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.statCard {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+}
+
+.statValue {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    margin-top: var(--spacing-sm);
+}
