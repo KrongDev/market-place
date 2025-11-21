@@ -1,108 +1,50 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Databases
-  user-db:
-    image: postgres:15-alpine
+  # Infrastructure
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
     environment:
-      POSTGRES_DB: marketplace_user
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "5432:5432"
-    volumes:
-      - user_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "2181:2181"
 
-  exchange-db:
-    image: postgres:15-alpine
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9093:9092"
     environment:
-      POSTGRES_DB: marketplace_exchange
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
-    volumes:
-      - exchange_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
-  chat-db:
-    image: postgres:15-alpine
+  mysql:
+    image: mysql:8.0
     environment:
-      POSTGRES_DB: marketplace_chat
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: marketplace
     ports:
-      - "5434:5432"
+      - "3306:3306"
     volumes:
-      - chat_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - mysql_data:/var/lib/mysql
 
-  file-db:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: marketplace_file
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+  mongodb:
+    image: mongo:6.0
     ports:
-      - "5435:5432"
+      - "27017:27017"
     volumes:
-      - file_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - mongo_data:/data/db
 
-  community-db:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: marketplace_community
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5436:5432"
-    volumes:
-      - community_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  currency-db:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: marketplace_currency
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5437:5432"
-    volumes:
-      - currency_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # API Gateway
   gateway:
     image: nginx:alpine
     ports:
-      - "80:80"
+      - "8080:8080"
     volumes:
       - ./server/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -116,94 +58,98 @@ services:
   # Microservices
   user-service:
     build:
-      context: ./server/user-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: server/user-service/Dockerfile
     ports:
       - "8081:8081"
-    depends_on:
-      user-db:
-        condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/marketplace?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      - mysql
 
   exchange-service:
     build:
-      context: ./server/exchange-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: server/exchange-service/Dockerfile
     ports:
       - "8082:8082"
-    depends_on:
-      exchange-db:
-        condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-
-  community-service:
-    build:
-      context: ./server/community-service
-      dockerfile: Dockerfile
-    ports:
-      - "8083:8083"
+      SERVER_PORT: 8082
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/marketplace
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
-      community-db:
-        condition: service_healthy
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-
-  chat-service:
-    build:
-      context: ./server/chat-service
-      dockerfile: Dockerfile
-    ports:
-      - "8084:8084"
-    depends_on:
-      chat-db:
-        condition: service_healthy
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-
-  file-service:
-    build:
-      context: ./server/file-service
-      dockerfile: Dockerfile
-    ports:
-      - "8085:8085"
-    volumes:
-      - ./uploads:/app/uploads
-    depends_on:
-      file-db:
-        condition: service_healthy
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
+      - mongodb
+      - kafka
 
   currency-service:
     build:
-      context: ./server/currency-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: server/currency-service/Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/marketplace?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      - mysql
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: server/chat-service/Dockerfile
+    ports:
+      - "8084:8084"
+    environment:
+      SERVER_PORT: 8084
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/marketplace
+    depends_on:
+      - mongodb
+
+  community-service:
+    build:
+      context: .
+      dockerfile: server/community-service/Dockerfile
+    ports:
+      - "8085:8085"
+    environment:
+      SERVER_PORT: 8085
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/marketplace?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      - mysql
+
+  file-service:
+    build:
+      context: .
+      dockerfile: server/file-service/Dockerfile
     ports:
       - "8086:8086"
-    depends_on:
-      currency-db:
-        condition: service_healthy
+    volumes:
+      - ./uploads:/uploads
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8086
 
-  # Client
   client:
     build:
-      context: ./client
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: client/Dockerfile
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost/api/v1
+      NEXT_PUBLIC_API_URL: http://localhost:8080/api # Adjust if using proxy or direct
+      # Since client is SSR, it might need internal docker network URLs for server-side fetch
+      # But for client-side fetch, localhost is fine if user accesses via browser.
+      # Next.js rewrites in next.config.js might need adjustment for Docker networking if SSR.
     depends_on:
-      - gateway
+      - user-service
+      - exchange-service
 
 volumes:
-  user_db_data:
-  exchange_db_data:
-  chat_db_data:
-  file_db_data:
-  community_db_data:
-  currency_db_data:
+  mysql_data:
+  mongo_data:
