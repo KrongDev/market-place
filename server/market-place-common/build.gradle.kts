@@ -5,12 +5,14 @@ plugins {
 }
 
 group = "com.marketplace"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0"
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
+    withSourcesJar()
+    withJavadocJar()
 }
 
 repositories {
@@ -37,4 +39,53 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("gpr") {
+            from(components["java"])
+            
+            groupId = "com.marketplace"
+            artifactId = "market-place-common"
+            version = project.version.toString()
+            
+            pom {
+                name.set("Market Place Common")
+                description.set("Common library for Market Place microservices")
+                url.set("https://github.com/KrongDev/market-place")
+                
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id.set("krongdev")
+                        name.set("KrongDev")
+                    }
+                }
+                
+                scm {
+                    connection.set("scm:git:git://github.com/KrongDev/market-place.git")
+                    developerConnection.set("scm:git:ssh://github.com/KrongDev/market-place.git")
+                    url.set("https://github.com/KrongDev/market-place")
+                }
+            }
+        }
+    }
+    
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/KrongDev/market-place")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.token") as String? ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
