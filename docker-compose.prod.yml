@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Production configuration extends base docker-compose.yml
+  # Use: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+  mysql:
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  mongodb:
+    command: mongod --auth
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+
+  gateway:
+    ports:
+      - "80:8080"
+      - "443:443"
+    volumes:
+      - ./server/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+
+  user-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  exchange-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/marketplace?authSource=admin
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  currency-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    deploy:
+      replicas: 2
+
+  chat-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/marketplace?authSource=admin
+    deploy:
+      replicas: 2
+
+  community-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    deploy:
+      replicas: 2
+
+  file-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    volumes:
+      - /var/marketplace/uploads:/uploads
+
+  client:
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://api.yourdomain.com/api/v1
+    deploy:
+      replicas: 2
