@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: chat-service
+
+  datasource:
+    url: jdbc:postgresql://chat-db:5432/marketplace_chat
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+
+server:
+  port: 8084
+  servlet:
+    context-path: /
+
+# WebSocket configuration
+websocket:
+  allowed-origins:
+    - http://localhost:3000
+    - http://localhost:80
+  message-broker:
+    relay-host: localhost
+    relay-port: 61613
+  stomp-endpoint: /ws-chat
+
+# External service URLs
+services:
+  exchange-service:
+    url: http://exchange-service:8082
+  user-service:
+    url: http://user-service:8081
+
+logging:
+  level:
+    root: INFO
+    com.marketplace.chatservice: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.messaging: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

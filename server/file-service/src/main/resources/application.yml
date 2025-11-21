@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: file-service
+
+  datasource:
+    url: jdbc:postgresql://file-db:5432/marketplace_file
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+      file-size-threshold: 2KB
+
+server:
+  port: 8085
+  servlet:
+    context-path: /
+
+# File storage configuration
+file:
+  upload-dir: /app/uploads
+  allowed-extensions:
+    - jpg
+    - jpeg
+    - png
+    - gif
+    - pdf
+  max-size: 10485760 # 10MB in bytes
+
+logging:
+  level:
+    root: INFO
+    com.marketplace.fileservice: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

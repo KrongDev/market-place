@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: currency-service
+
+  datasource:
+    url: jdbc:postgresql://currency-db:5432/marketplace_currency
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+
+server:
+  port: 8086
+  servlet:
+    context-path: /
+
+# External service URLs
+services:
+  user-service:
+    url: http://user-service:8081
+  chat-service:
+    url: http://chat-service:8084
+
+# Currency exchange configuration
+currency:
+  exchange-rates:
+    update-interval: 3600000 # 1 hour in milliseconds
+  transaction:
+    timeout: 30000 # 30 seconds
+
+logging:
+  level:
+    root: INFO
+    com.marketplace.currencyservice: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

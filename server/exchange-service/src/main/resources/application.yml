@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: exchange-service
+
+  datasource:
+    url: jdbc:postgresql://exchange-db:5432/marketplace_exchange
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+
+server:
+  port: 8082
+  servlet:
+    context-path: /
+
+# External service URLs
+services:
+  user-service:
+    url: http://user-service:8081
+  chat-service:
+    url: http://chat-service:8084
+  file-service:
+    url: http://file-service:8085
+
+logging:
+  level:
+    root: INFO
+    com.marketplace.exchangeservice: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
