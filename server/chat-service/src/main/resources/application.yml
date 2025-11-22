@@ -2,32 +2,35 @@ spring:
   application:
     name: chat-service
 
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
   data:
     mongodb:
-      uri: mongodb://mongodb:27017/marketplace
-      database: marketplace
+      uri: mongodb://${MONGODB_HOST:localhost}:${MONGODB_PORT:27017}/${MONGODB_DATABASE:marketplace}
+      database: ${MONGODB_DATABASE:marketplace}
 
 server:
-  port: 8084
+  port: ${SERVER_PORT:8084}
   servlet:
     context-path: /
 
 # WebSocket configuration
 websocket:
   allowed-origins:
-    - http://localhost:3000
-    - http://localhost:8080
+    - ${ALLOWED_ORIGIN_1:http://localhost:3000}
+    - ${ALLOWED_ORIGIN_2:http://localhost:8080}
   message-broker:
-    relay-host: localhost
-    relay-port: 61613
+    relay-host: ${BROKER_HOST:localhost}
+    relay-port: ${BROKER_PORT:61613}
   stomp-endpoint: /ws-chat
 
 # External service URLs
 services:
   exchange-service:
-    url: http://exchange-service:8082
+    url: ${EXCHANGE_SERVICE_URL:http://localhost:8082}
   user-service:
-    url: http://user-service:8081
+    url: ${USER_SERVICE_URL:http://localhost:8081}
 
 logging:
   level:
@@ -47,3 +50,52 @@ management:
   endpoint:
     health:
       show-details: always
+
+---
+# Local profile (default)
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/marketplace
+
+services:
+  exchange-service:
+    url: http://localhost:8082
+  user-service:
+    url: http://localhost:8081
+
+---
+# Docker profile
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  data:
+    mongodb:
+      uri: mongodb://mongodb:27017/marketplace
+
+services:
+  exchange-service:
+    url: http://exchange-service:8082
+  user-service:
+    url: http://user-service:8081
+
+---
+# Production profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  logging:
+    level:
+      root: WARN
+      com.marketplace.chatservice: INFO
+      org.springframework.web: INFO
+      org.springframework.messaging: INFO
+      org.springframework.data.mongodb: WARN

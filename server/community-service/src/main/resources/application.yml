@@ -2,10 +2,13 @@ spring:
   application:
     name: community-service
 
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
   datasource:
-    url: jdbc:mysql://mysql:3306/marketplace?useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: root
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:marketplace}?useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10
@@ -23,14 +26,14 @@ spring:
     open-in-view: false
 
 server:
-  port: 8085
+  port: ${SERVER_PORT:8085}
   servlet:
     context-path: /
 
 # External service URLs
 services:
   user-service:
-    url: http://user-service:8081
+    url: ${USER_SERVICE_URL:http://localhost:8081}
 
 # Pagination defaults
 pagination:
@@ -54,3 +57,48 @@ management:
   endpoint:
     health:
       show-details: always
+
+---
+# Local profile (default)
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/marketplace?useSSL=false&allowPublicKeyRetrieval=true
+
+services:
+  user-service:
+    url: http://localhost:8081
+
+---
+# Docker profile
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    url: jdbc:mysql://mysql:3306/marketplace?useSSL=false&allowPublicKeyRetrieval=true
+
+services:
+  user-service:
+    url: http://user-service:8081
+
+---
+# Production profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    show-sql: false
+
+  logging:
+    level:
+      root: WARN
+      com.marketplace.communityservice: INFO
+      org.springframework.web: INFO
+      org.hibernate.SQL: WARN

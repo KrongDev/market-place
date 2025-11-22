@@ -2,10 +2,13 @@ spring:
   application:
     name: user-service
 
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
   datasource:
-    url: jdbc:mysql://mysql:3306/marketplace?useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: root
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:marketplace}?useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10
@@ -23,13 +26,13 @@ spring:
     open-in-view: false
 
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
   servlet:
     context-path: /
 
 jwt:
-  secret: your-secret-key-change-this-in-production-minimum-256-bits
-  expiration: 86400000 # 24 hours in milliseconds
+  secret: ${JWT_SECRET:your-secret-key-change-this-in-production-minimum-256-bits}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 logging:
   level:
@@ -48,3 +51,40 @@ management:
   endpoint:
     health:
       show-details: always
+
+---
+# Local profile (default)
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/marketplace?useSSL=false&allowPublicKeyRetrieval=true
+
+---
+# Docker profile
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    url: jdbc:mysql://mysql:3306/marketplace?useSSL=false&allowPublicKeyRetrieval=true
+
+---
+# Production profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    show-sql: false
+
+  logging:
+    level:
+      root: WARN
+      com.marketplace.userservice: INFO
+      org.springframework.web: INFO
+      org.hibernate.SQL: WARN

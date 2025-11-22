@@ -2,28 +2,31 @@ spring:
   application:
     name: file-service
 
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
   servlet:
     multipart:
       enabled: true
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: ${MAX_FILE_SIZE:10MB}
+      max-request-size: ${MAX_REQUEST_SIZE:10MB}
       file-size-threshold: 2KB
 
 server:
-  port: 8086
+  port: ${SERVER_PORT:8086}
   servlet:
     context-path: /
 
 # File storage configuration
 file:
-  upload-dir: /uploads
+  upload-dir: ${FILE_UPLOAD_DIR:/uploads}
   allowed-extensions:
     - jpg
     - jpeg
     - png
     - gif
     - pdf
-  max-size: 10485760 # 10MB in bytes
+  max-size: ${FILE_MAX_SIZE:10485760}
 
 logging:
   level:
@@ -41,3 +44,36 @@ management:
   endpoint:
     health:
       show-details: always
+
+---
+# Local profile (default)
+spring:
+  config:
+    activate:
+      on-profile: local
+
+file:
+  upload-dir: ./uploads
+
+---
+# Docker profile
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+file:
+  upload-dir: /uploads
+
+---
+# Production profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  logging:
+    level:
+      root: WARN
+      com.marketplace.fileservice: INFO
+      org.springframework.web: INFO
